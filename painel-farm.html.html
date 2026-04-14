@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusGG · Painel de Farm</title>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0e0f11;--surface:#16181c;--surface2:#1e2026;
+--border:rgba(255,255,255,0.07);--border-em:rgba(255,255,255,0.15);
+--text:#e8e9eb;--muted:#8a8d96;--hint:#4e5058;
+--gold:#d4a017;--gold-dim:rgba(212,160,23,0.12);
+--green:#4caf6e;--green-dim:rgba(76,175,110,0.12);
+--red:#e05c5c;--red-dim:rgba(224,92,92,0.12);
+--mono:'JetBrains Mono','Fira Code',monospace;
+--sans:'Inter','Segoe UI',system-ui,sans-serif;
+--r-sm:6px;--r-md:10px;--r-lg:14px
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);padding:2rem}
+.container{max-width:860px;margin:auto}
+
+.header{display:flex;justify-content:space-between;margin-bottom:1rem}
+.faction-badge{background:var(--gold-dim);color:var(--gold);padding:4px 10px;border-radius:6px}
+.status-bar{font-size:12px;color:var(--hint)}
+
+.stat-card{background:var(--surface);padding:1rem;border-radius:10px;margin-bottom:10px}
+.member-card{background:var(--surface);padding:1rem;border-radius:10px;margin-bottom:6px}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<span class="faction-badge">NexusGG</span>
+<div class="status-bar" id="status">carregando...</div>
+</div>
+
+<div id="stats"></div>
+<div id="members"></div>
+
+</div>
+
+<script>
+
+const API_BASE = window.location.origin;
+const POLL_INTERVAL = 5000;
+
+async function buscarDados(){
+  try{
+    const res = await fetch(`${API_BASE}/api/farm`, {
+      headers: {
+        "Authorization": "nexusgg-dev"
+      }
+    });
+
+    if (!res.ok) throw new Error("Erro API");
+
+    const json = await res.json();
+
+    render(json.farm || {});
+    document.getElementById("status").innerText = "online";
+
+  }catch{
+    document.getElementById("status").innerText = "offline";
+  }
+}
+
+function render(data){
+  let total = 0;
+  let html = "";
+
+  Object.values(data).forEach(m=>{
+    total += m.sujo || 0;
+
+    html += `
+      <div class="member-card">
+        <strong>${m.nome || "Sem nome"}</strong><br>
+        Sujo: R$ ${(m.sujo||0).toLocaleString("pt-BR")}<br>
+        Componentes: ${(m.comp||0)}
+      </div>
+    `;
+  });
+
+  document.getElementById("stats").innerHTML = `
+    <div class="stat-card">
+      Total Sujo: R$ ${total.toLocaleString("pt-BR")}
+    </div>
+  `;
+
+  document.getElementById("members").innerHTML = html;
+}
+
+function iniciar(){
+  buscarDados();
+  setInterval(buscarDados, POLL_INTERVAL);
+}
+
+iniciar();
+
+</script>
+
+</body>
+</html>
